@@ -3,9 +3,9 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"handler/internal/provider"
 	"io"
 	"log"
-	"music-fetcher/internal/provider"
 	"net/http"
 	"strings"
 )

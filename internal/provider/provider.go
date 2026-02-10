@@ -1,6 +1,6 @@
 package provider
 
-import "music-fetcher/internal/model"
+import "handler/internal/model"
 
 // Provider 定义音乐资源提供者的接口
 type Provider interface {

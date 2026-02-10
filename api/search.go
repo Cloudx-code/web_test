@@ -3,7 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"music-fetcher/internal/provider/kuwo"
+	"handler/internal/provider/kuwo"
 	"net/http"
 )
 

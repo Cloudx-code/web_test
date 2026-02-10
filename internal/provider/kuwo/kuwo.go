@@ -2,8 +2,8 @@ package kuwo
 
 import (
 	"fmt"
+	"handler/internal/model"
 	"io"
-	"music-fetcher/internal/model"
 	"net/http"
 	"net/url"
 	"regexp"

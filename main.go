@@ -3,11 +3,11 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"music-fetcher/internal/downloader"
-	"music-fetcher/internal/model"
-	"music-fetcher/internal/provider"
-	"music-fetcher/internal/provider/kuwo"
-	"music-fetcher/internal/server"
+	"handler/internal/downloader"
+	"handler/internal/model"
+	"handler/internal/provider"
+	"handler/internal/provider/kuwo"
+	"handler/internal/server"
 	"os"
 	"strconv"
 	"strings"
@@ -37,7 +37,7 @@ func main() {
 					addr = os.Args[i+2]
 				}
 			}
-			fmt.Println(bannerText)
+			fmt.Print(bannerText)
 			srv := server.New(p)
 			if err := srv.Start(addr); err != nil {
 				fmt.Fprintf(os.Stderr, "启动失败: %v\n", err)
@@ -54,7 +54,7 @@ func main() {
 func runCLI(currentProvider provider.Provider) {
 	scanner := bufio.NewScanner(os.Stdin)
 
-	fmt.Println(bannerText)
+	fmt.Print(bannerText)
 	fmt.Println("  音乐资源获取器 v1.0")
 	fmt.Println("  输入关键词搜索歌曲，支持下载")
 	fmt.Println(strings.Repeat("─", 50))
