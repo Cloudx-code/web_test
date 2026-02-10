@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -55,20 +56,20 @@ func (s *Server) handlePlay(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url, err := s.provider.GetPlayURL(id)
-	if err != nil {
-		jsonErr(w, fmt.Sprintf("获取链接失败: %v", err), 500)
-		return
+	playURL := "/api/download?id=" + url.QueryEscape(id) + "&play=1"
+	if name := strings.TrimSpace(r.URL.Query().Get("name")); name != "" {
+		playURL += "&name=" + url.QueryEscape(name)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{"code": 0, "url": url})
+	json.NewEncoder(w).Encode(map[string]any{"code": 0, "url": playURL})
 }
 
 // GET /api/download?id=xxx&name=xxx  代理下载
 func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	name := r.URL.Query().Get("name")
+	isPlay := r.URL.Query().Get("play") == "1"
 	if id == "" {
 		jsonErr(w, "缺少歌曲 ID", 400)
 		return
@@ -83,22 +84,55 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := http.Get(playURL)
+	req, err := http.NewRequest(http.MethodGet, playURL, nil)
+	if err != nil {
+		jsonErr(w, "创建请求失败", 500)
+		return
+	}
+	if userAgent := r.UserAgent(); userAgent != "" {
+		req.Header.Set("User-Agent", userAgent)
+	}
+	if rng := r.Header.Get("Range"); rng != "" {
+		req.Header.Set("Range", rng)
+	}
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		jsonErr(w, "下载失败", 500)
 		return
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusPartialContent {
+		if isPlay {
+			http.Error(w, "播放失败", http.StatusBadGateway)
+			return
+		}
+		jsonErr(w, "下载源返回异常", http.StatusBadGateway)
+		return
+	}
+
+	for _, key := range []string{
+		"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges",
+	} {
+		if value := resp.Header.Get(key); value != "" {
+			w.Header().Set(key, value)
+		}
+	}
+
 	// 过滤文件名非法字符
 	safeName := strings.NewReplacer("/", "_", "\\", "_", ":", "_", "\"", "_").Replace(name)
 
-	w.Header().Set("Content-Type", "audio/mpeg")
-	w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.mp3"`, safeName))
-	if resp.ContentLength > 0 {
-		w.Header().Set("Content-Length", fmt.Sprintf("%d", resp.ContentLength))
+	if w.Header().Get("Content-Type") == "" {
+		w.Header().Set("Content-Type", "audio/mpeg")
 	}
-	io.Copy(w, resp.Body)
+	if isPlay {
+		w.Header().Set("Content-Disposition", "inline")
+	} else {
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename="%s.mp3"`, safeName))
+	}
+	w.WriteHeader(resp.StatusCode)
+	_, _ = io.Copy(w, resp.Body)
 }
 
 func jsonErr(w http.ResponseWriter, msg string, status int) {
