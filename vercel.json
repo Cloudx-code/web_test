@@ -1,12 +1,7 @@
 {
   "functions": {
-    "api/search.go": { "runtime": "@vercel/go@0.4.0" },
-    "api/play.go":   { "runtime": "@vercel/go@0.4.0" },
-    "api/download.go": { "runtime": "@vercel/go@0.4.0" }
-  },
-  "rewrites": [
-    { "source": "/api/search", "destination": "/api/search" },
-    { "source": "/api/play", "destination": "/api/play" },
-    { "source": "/api/download", "destination": "/api/download" }
-  ]
+    "api/search.go": { "runtime": "@vercel/go@3.4.0" },
+    "api/play.go":   { "runtime": "@vercel/go@3.4.0" },
+    "api/download.go": { "runtime": "@vercel/go@3.4.0" }
+  }
 }
