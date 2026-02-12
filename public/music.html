@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudx · 音乐工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f0f0f;--card:#1a1a2e;--primary:#e94560;--text:#eee;--sub:#999;--border:#2a2a3e;--hover:#16213e}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:24px 16px}
+h1{text-align:center;font-size:28px;margin:32px 0 8px;font-weight:700;letter-spacing:2px}
+.subtitle{text-align:center;color:var(--sub);margin-bottom:32px;font-size:14px}
+.search-box{display:flex;gap:10px;margin-bottom:28px}
+.search-box input{flex:1;padding:12px 18px;border-radius:12px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;outline:none;transition:border .2s}
+.search-box input:focus{border-color:var(--primary)}
+.search-box button{padding:12px 28px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-size:16px;cursor:pointer;font-weight:600;transition:opacity .2s;white-space:nowrap}
+.search-box button:hover{opacity:.85}
+.search-box button:disabled{opacity:.5;cursor:not-allowed}
+.status{text-align:center;color:var(--sub);padding:48px 0;font-size:15px}
+.song-list{display:flex;flex-direction:column;gap:8px}
+.song-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--card);border-radius:12px;transition:background .15s}
+.song-item:hover{background:var(--hover)}
+.song-idx{color:var(--sub);font-size:14px;width:28px;text-align:center;flex-shrink:0}
+.song-info{flex:1;min-width:0}
+.song-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-meta{font-size:13px;color:var(--sub);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.song-dur{color:var(--sub);font-size:13px;width:48px;text-align:right;flex-shrink:0}
+.song-actions{display:flex;gap:8px;flex-shrink:0}
+.btn{padding:7px 14px;border-radius:8px;border:none;font-size:13px;cursor:pointer;font-weight:500;transition:opacity .15s}
+.btn:hover{opacity:.8}
+.btn-play{background:#1db954;color:#fff}
+.btn-play.playing{background:#e94560}
+.btn-dl{background:#333;color:#ddd}
+
+/* player bar */
+.player{position:fixed;bottom:0;left:0;right:0;background:#141425;border-top:1px solid var(--border);padding:10px 20px;display:none;align-items:center;gap:14px;z-index:10}
+.player.active{display:flex}
+.player-info{flex:1;min-width:0}
+.player-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.player-artist{font-size:12px;color:var(--sub)}
+.player audio{height:32px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="container">
+  <p class="subtitle"><a href="/" style="color:#999;text-decoration:none">← 返回主页</a></p>
+  <h1>Music Fetcher</h1>
+  <p class="subtitle">主页菜单中的音乐模块：搜索歌曲，在线播放或下载</p>
+  <div class="search-box">
+    <input id="kw" type="text" placeholder="输入歌曲名或歌手名..." autocomplete="off">
+    <button id="searchBtn" onclick="doSearch()">搜索</button>
+  </div>
+  <div id="result"></div>
+</div>
+
+<div class="player" id="player">
+  <div class="player-info">
+    <div class="player-name" id="pName"></div>
+    <div class="player-artist" id="pArtist"></div>
+  </div>
+  <audio id="audio" controls autoplay></audio>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const kw = $('#kw');
+const resultDiv = $('#result');
+let songs = [];
+let currentPlayId = null;
+
+kw.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+async function doSearch() {
+  const keyword = kw.value.trim();
+  if (!keyword) return;
+  const btn = $('#searchBtn');
+  btn.disabled = true;
+  btn.textContent = '搜索中...';
+  resultDiv.innerHTML = '<div class="status">正在搜索...</div>';
+
+  try {
+    const res = await fetch('/api/search?keyword=' + encodeURIComponent(keyword));
+    const json = await res.json();
+    if (json.code !== 0) { resultDiv.innerHTML = '<div class="status">' + (json.msg || '搜索失败') + '</div>'; return; }
+    songs = json.data || [];
+    if (!songs.length) { resultDiv.innerHTML = '<div class="status">没有找到相关歌曲</div>'; return; }
+    renderSongs();
+  } catch(e) {
+    resultDiv.innerHTML = '<div class="status">请求失败，请重试</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '搜索';
+  }
+}
+
+function fmtDur(s) {
+  if (!s) return '--:--';
+  const m = Math.floor(s / 60), sec = s % 60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function clean(s) { return (s||'').replace(/&nbsp;/g, ' '); }
+
+function renderSongs() {
+  resultDiv.innerHTML = '<div class="song-list">' + songs.map((s, i) => `
+    <div class="song-item">
+      <span class="song-idx">${i+1}</span>
+      <div class="song-info">
+        <div class="song-name">${clean(s.Name)}</div>
+        <div class="song-meta">${clean(s.Artist)} · ${clean(s.Album)}</div>
+      </div>
+      <span class="song-dur">${fmtDur(s.Duration)}</span>
+      <div class="song-actions">
+        <button class="btn btn-play${currentPlayId===s.ID?' playing':''}" onclick="play(${i})" id="pbtn-${i}">${currentPlayId===s.ID?'⏸ 暂停':'▶ 播放'}</button>
+        <button class="btn btn-dl" onclick="dl(${i})">↓ 下载</button>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+async function play(idx) {
+  const s = songs[idx];
+  const audio = $('#audio');
+
+  if (currentPlayId === s.ID && !audio.paused) {
+    audio.pause();
+    currentPlayId = null;
+    renderSongs();
+    $('#player').classList.remove('active');
+    return;
+  }
+
+  const btn = $(`#pbtn-${idx}`);
+  btn.textContent = '加载中...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/play?id=' + encodeURIComponent(s.ID));
+    const json = await res.json();
+    if (json.code !== 0) { alert(json.msg || '获取播放链接失败'); return; }
+
+    audio.src = json.url;
+    audio.play();
+    currentPlayId = s.ID;
+    $('#pName').textContent = clean(s.Name);
+    $('#pArtist').textContent = clean(s.Artist);
+    $('#player').classList.add('active');
+    renderSongs();
+  } catch(e) {
+    alert('播放失败');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+$('#audio').addEventListener('ended', () => { currentPlayId = null; renderSongs(); });
+
+function dl(idx) {
+  const s = songs[idx];
+  const name = clean(s.Name) + ' - ' + clean(s.Artist);
+  window.open('/api/download?id=' + encodeURIComponent(s.ID) + '&name=' + encodeURIComponent(name), '_blank');
+}
+</script>
+</body>
+</html>
