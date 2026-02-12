@@ -1,0 +1,5 @@
+{
+  "version": "2026-02-12-2213",
+  "note": "trigger fresh vercel deployment with menu homepage",
+  "expected_commits": ["96082a7", "d66bc27"]
+}
