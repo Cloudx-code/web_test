@@ -3,6 +3,7 @@ import json
 import os
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from urllib.parse import quote
 from urllib.request import Request, urlopen
@@ -43,16 +44,23 @@ def brave_search(query):
         return None
     url = "https://api.search.brave.com/res/v1/web/search?q=" + quote(query)
     headers = {"Accept": "application/json", "X-Subscription-Token": BRAVE_API_KEY}
-    try:
-        data = get_json(url, headers=headers)
-        web = data.get("web", {}).get("results", [])
-        snippets = [(r.get("description") or "").strip() for r in web[:3]]
-        snippets = [s for s in snippets if s]
-        if not snippets:
+
+    # 频率控制：每次请求前等 1 秒，避免超过 1 req/s
+    time.sleep(1.0)
+    for attempt in range(2):  # 最多重试一次
+        try:
+            data = get_json(url, headers=headers)
+            web = data.get("web", {}).get("results", [])
+            snippets = [(r.get("description") or "").strip() for r in web[:3]]
+            snippets = [s for s in snippets if s]
+            if not snippets:
+                return None
+            return {"summary": " ".join(snippets)[:360], "source_title": web[0].get("title", "")}
+        except Exception:
+            if attempt == 0:
+                time.sleep(1.0)
+                continue
             return None
-        return {"summary": " ".join(snippets)[:360], "source_title": web[0].get("title", "")}
-    except Exception:
-        return None
 
 
 def score_and_idea(topic, found):
