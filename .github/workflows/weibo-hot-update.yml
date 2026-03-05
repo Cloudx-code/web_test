@@ -1,0 +1,36 @@
+name: Update Weibo Hot Report
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Generate report
+        env:
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          TIANAPI_KEY: ${{ secrets.TIANAPI_KEY }}
+        run: |
+          python scripts/update_weibo_report.py
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add weibo-hot-data.json public/weibo-hot-analysis-report.html
+          git diff --staged --quiet || git commit -m "chore: auto-update weibo hot report"
+          git push
