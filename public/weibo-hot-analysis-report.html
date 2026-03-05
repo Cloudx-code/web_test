@@ -1,34 +1,538 @@
 <!DOCTYPE html>
-<html lang="zh-CN"><head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>微博热搜产品创意报告</title>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微博热搜产品创意报告 - 2026年3月4日</title>
 <style>
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC",sans-serif;background:#f8f9fa;color:#2c3e50;margin:0}
-.container{max-width:960px;margin:0 auto;padding:20px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;margin:12px 0}
-.tier-top{border-color:#e74c3c;box-shadow:0 0 0 2px rgba(231,76,60,.12)}.tier-mid{border-color:#27ae60}.tier-low{border-color:#bdc3c7}
-.muted{color:#6b7280}.hot{display:inline-block;background:#fee2e2;color:#b91c1c;padding:2px 8px;border-radius:999px;font-size:12px}
-.nav{position:sticky;top:0;background:#fff;padding:8px 0;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #eee}
-button{border:1px solid #ddd;background:#fff;padding:6px 10px;border-radius:8px;cursor:pointer}
-.score{height:8px;background:#eee;border-radius:999px;overflow:hidden}.bar{height:100%;width:0;background:#e74c3c;transition:width .8s}
-</style></head><body><div class="container">
-<h1>微博热搜产品创意报告</h1><p class="muted">更新时间：2026-03-05 05:20 UTC</p><div id="stats" class="muted"></div>
-<div class="nav"><button data-sort="rank">按热搜排名</button><button data-sort="score">按总分</button><button data-filter="all">全部</button><button data-filter="top">优秀(≥80)</button><button data-filter="mid">良好(60-79)</button><button data-filter="low">一般(<60)</button></div>
-<div id="cards"></div></div>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;background:#f8f9fa;color:#2c3e50;line-height:1.6}
+.container{max-width:960px;margin:0 auto;padding:20px}
+.header{background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;padding:40px 30px;border-radius:16px;margin-bottom:24px;text-align:center}
+.header h1{font-size:28px;margin-bottom:8px}
+.header .subtitle{font-size:14px;opacity:.9;margin-bottom:20px}
+.stats{display:flex;justify-content:center;gap:32px;flex-wrap:wrap}
+.stat-item{text-align:center}
+.stat-num{font-size:32px;font-weight:700}
+.stat-label{font-size:12px;opacity:.85}
+.nav{background:#fff;padding:14px 20px;border-radius:12px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.nav-group{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.nav-group span{font-size:13px;color:#888;margin-right:4px}
+.nav-btn{padding:6px 14px;border:1.5px solid #ddd;border-radius:20px;background:#fff;color:#555;font-size:13px;cursor:pointer;transition:all .2s}
+.nav-btn:hover{border-color:#e74c3c;color:#e74c3c}
+.nav-btn.active{background:#e74c3c;color:#fff;border-color:#e74c3c}
+.card{background:#fff;border-radius:14px;padding:28px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,.06);border-left:5px solid #bdc3c7;transition:transform .2s,box-shadow .2s}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.1)}
+.card.tier-excellent{border-left-color:#e74c3c;box-shadow:0 2px 16px rgba(231,76,60,.18)}
+.card.tier-good{border-left-color:#27ae60}
+.card.tier-average{border-left-color:#bdc3c7}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.rank-badge{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.rank-1{background:linear-gradient(135deg,#f39c12,#e74c3c)}
+.rank-2{background:linear-gradient(135deg,#e67e22,#d35400)}
+.rank-3{background:linear-gradient(135deg,#f1c40f,#e67e22)}
+.rank-other{background:#95a5a6}
+.card-title-area{flex:1;margin-left:14px}
+.hotword{font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px}
+.meta-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.heat{font-size:13px;color:#e74c3c}
+.hottag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:#ffeaa7;color:#d68910}
+.score-badge{font-size:28px;font-weight:800;text-align:center;flex-shrink:0}
+.score-badge .tier-icon{font-size:20px;display:block}
+.score-excellent{color:#e74c3c}
+.score-good{color:#27ae60}
+.score-average{color:#95a5a6}
+.section{margin-bottom:16px}
+.section-title{font-size:13px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:6px;letter-spacing:1px}
+.event-summary{background:#f8f9fa;padding:14px 16px;border-radius:10px;font-size:14px;color:#555;line-height:1.7}
+.inspiration{background:#fff5f5;padding:14px 16px;border-radius:10px;font-size:14px;color:#c0392b;border:1px solid #fde2e2}
+.product-name{font-size:22px;font-weight:700;color:#e74c3c;margin-bottom:4px}
+.product-pitch{font-size:15px;color:#666;margin-bottom:12px;font-style:italic}
+.features{list-style:none;padding:0}
+.features li{padding:6px 0 6px 20px;position:relative;font-size:14px}
+.features li::before{content:"▸";position:absolute;left:0;color:#e74c3c;font-weight:700}
+.target-users{font-size:14px;color:#555;margin-top:8px}
+.target-users strong{color:#2c3e50}
+.score-bars{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.score-bar-group{flex:1;min-width:120px}
+.score-bar-label{font-size:12px;color:#888;margin-bottom:4px}
+.score-bar-track{height:8px;background:#eee;border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;width:0;transition:width 1s ease-out}
+.score-bar-fill.fun{background:linear-gradient(90deg,#e74c3c,#f39c12)}
+.score-bar-fill.useful{background:linear-gradient(90deg,#27ae60,#2ecc71)}
+.score-bar-value{font-size:12px;color:#555;margin-top:2px;text-align:right}
+.back-to-top{position:fixed;bottom:30px;right:30px;width:44px;height:44px;border-radius:50%;background:#e74c3c;color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(231,76,60,.4);display:none;align-items:center;justify-content:center;transition:opacity .3s;z-index:200}
+.back-to-top:hover{opacity:.85}
+.footer{text-align:center;padding:30px;color:#aaa;font-size:12px}
+@media(max-width:640px){.container{padding:12px}.header{padding:28px 18px}.header h1{font-size:22px}.stats{gap:16px}.stat-num{font-size:24px}.card{padding:20px}.hotword{font-size:17px}.nav{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+<h1>微博热搜产品创意报告</h1>
+<div class="subtitle">基于 2026年3月4日 微博实时热搜 · AI 生成产品灵感</div>
+<div class="stats">
+<div class="stat-item"><div class="stat-num">10</div><div class="stat-label">分析话题</div></div>
+<div class="stat-item"><div class="stat-num">74</div><div class="stat-label">平均分</div></div>
+<div class="stat-item"><div class="stat-num">3</div><div class="stat-label">🏆 优秀</div></div>
+<div class="stat-item"><div class="stat-num">5</div><div class="stat-label">👍 良好</div></div>
+<div class="stat-item"><div class="stat-num">2</div><div class="stat-label">一般</div></div>
+</div>
+</div>
+
+<div class="nav">
+<div class="nav-group">
+<span>排序</span>
+<button class="nav-btn active" data-sort="score">按评分</button>
+<button class="nav-btn" data-sort="rank">按热度</button>
+</div>
+<div class="nav-group">
+<span>筛选</span>
+<button class="nav-btn active" data-filter="all">全部</button>
+<button class="nav-btn" data-filter="excellent">🏆 优秀</button>
+<button class="nav-btn" data-filter="good">👍 良好</button>
+<button class="nav-btn" data-filter="average">一般</button>
+</div>
+</div>
+
+<div id="cards">
+
+<!-- #1 伊朗首都全天遭轮番打击 - Score 88 -->
+<div class="card tier-excellent" data-score="88" data-rank="7">
+<div class="card-header">
+<div class="rank-badge rank-other">7</div>
+<div class="card-title-area">
+<div class="hotword">伊朗首都全天遭轮番打击</div>
+<div class="meta-row">
+<span class="heat">🔥 351,105</span>
+</div>
+</div>
+<div class="score-badge score-excellent"><span class="tier-icon">🏆</span>88</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">2月28日起美以联合对伊朗发动大规模军事打击，德黑兰持续遭受密集空袭。以军已投放超4000枚炸弹，目标涵盖总统府、核设施等。伊朗发动"真实承诺-4"反击，封锁霍尔木兹海峡致国际油价飙升13%。冲突已造成伊方787人死亡，中国已协助公民撤离。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">冲突中碎片化新闻铺天盖地，普通人难以理清来龙去脉与因果关系，搜索结果显示仅一条时间线就涉及美军、以军、伊朗革命卫队、霍尔木兹海峡、能源市场等多维信息，急需一个结构化的冲突追踪工具。</div>
+</div>
+<div class="section">
+<div class="product-name">「局势图谱」</div>
+<div class="product-pitch">全球冲突实时可视化追踪平台，三分钟看懂复杂局势</div>
+<ul class="features">
+<li>交互式冲突时间线：将碎片新闻自动聚合为因果时间轴，标注空袭、反击、外交回应等关键节点</li>
+<li>实时地缘热力图：在世界地图上标注德黑兰空袭区域、霍尔木兹海峡封锁范围、能源航线影响</li>
+<li>「对我有啥影响」模块：自动关联油价涨幅、航班取消、留学安全预警、撤侨动态等民生数据</li>
+<li>多方立场对照阅读：同一事件展示中国央视、美联社、半岛电视台等不同视角的报道差异</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>关注国际时事的中青年、能源/金融投资者、出海企业、海外留学生及家长</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="85"></div></div><div class="score-bar-value">68/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="100"></div></div><div class="score-bar-value">20/20</div></div>
+</div>
+</div>
+
+<!-- #2 建议彩礼金额不超过6万元 - Score 85 -->
+<div class="card tier-excellent" data-score="85" data-rank="1">
+<div class="card-header">
+<div class="rank-badge rank-1">1</div>
+<div class="card-title-area">
+<div class="hotword">建议彩礼金额不超过6万元</div>
+<div class="meta-row">
+<span class="heat">🔥 1,147,008</span>
+</div>
+</div>
+<div class="score-badge score-excellent"><span class="tier-icon">🏆</span>85</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">两会期间，全国人大代表李燕锋提出全国统一彩礼标准不超过6万元；代表石炳启建议以家庭年收入2-3倍为上限。河北河间已通过"低彩礼五部曲"将当地彩礼从18-19万降至5-8万。2026年中央一号文件再次点名"高额彩礼"，要求加强移风易俗。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索结果显示河间大庄村通过村规民约和数据透明成功降低彩礼，证明"让真实数据替代口口相传的攀比信息"是有效策略，可以做成全国性的数据平台。</div>
+</div>
+<div class="section">
+<div class="product-name">「礼轻情重」</div>
+<div class="product-pitch">全国首个婚俗大数据透明平台，用真实数据击碎彩礼焦虑</div>
+<ul class="features">
+<li>各地区彩礼实时数据地图，展示各县区中位数（数据来源：民政局、基层红白理事会公开数据）</li>
+<li>「幸福账本」：匿名调研婚后生活满意度与彩礼金额的关系，用数据证明"彩礼≠幸福"</li>
+<li>AI 婚礼预算规划师：根据双方家庭收入参考石炳启"年收入2-3倍"标准推荐合理彩礼区间</li>
+<li>低彩礼家庭社区故事墙：参考河间经验设置"表彰+福利"正向激励机制</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>即将步入婚姻的年轻情侣、关心子女婚事的父母、基层婚俗治理工作者</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="83"></div></div><div class="score-bar-value">66/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="95"></div></div><div class="score-bar-value">19/20</div></div>
+</div>
+</div>
+
+<!-- #3 飞驰人生3 - Score 83 -->
+<div class="card tier-excellent" data-score="83" data-rank="2">
+<div class="card-header">
+<div class="rank-badge rank-2">2</div>
+<div class="card-title-area">
+<div class="hotword">飞驰人生3暂列全球票房年榜第一</div>
+<div class="meta-row">
+<span class="heat">🔥 837,577</span>
+<span class="hottag">新</span>
+</div>
+</div>
+<div class="score-badge score-excellent"><span class="tier-icon">🏆</span>83</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">韩寒执导、沈腾主演的《飞驰人生3》以5.64亿美元全球票房超越《阿凡达3》（5.56亿）和《疯狂动物城2》（5.53亿），暂列2026年全球票房年榜首。国内票房突破38.77亿元，预测总票房44-45亿。沈腾成为首位主演票房超400亿的演员。2026春节档总票房57.52亿，同比降39.5%，但该片一骑绝尘。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索显示2026春节档总票房同比下降近40%，唯独《飞驰人生3》逆势爆发，证明"IP续集+顶级喜剧演员"组合的强大号召力。中国电影首次登顶全球年榜，国产电影的全球竞争力正在崛起，可以做一个帮助中国影迷追踪国产电影全球战绩的产品。</div>
+</div>
+<div class="section">
+<div class="product-name">「华影征途」</div>
+<div class="product-pitch">中国电影全球票房实时追踪与影迷竞猜社区</div>
+<ul class="features">
+<li>全球票房实时排行榜：对比《飞驰人生3》vs《阿凡达3》vs《疯狂动物城2》等跨国票房竞争</li>
+<li>「票房预言家」竞猜游戏：猜最终票房、破纪录时间，猜中可获电影周边奖品</li>
+<li>演员商业价值图谱：可视化沈腾408亿票房积累路径、韩寒导演作品票房曲线</li>
+<li>春节档/暑期档大盘分析：今年档期同比数据一目了然，帮影迷成为"票房分析师"</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>电影爱好者、影视行业从业者、票房数据爱好者</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="88"></div></div><div class="score-bar-value">70/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="65"></div></div><div class="score-bar-value">13/20</div></div>
+</div>
+</div>
+
+<!-- #4 古茗免单 - Score 78 -->
+<div class="card tier-good" data-score="78" data-rank="5">
+<div class="card-header">
+<div class="rank-badge rank-other">5</div>
+<div class="card-title-area">
+<div class="hotword">古茗免单</div>
+<div class="meta-row">
+<span class="heat">🔥 518,214</span>
+</div>
+</div>
+<div class="score-badge score-good"><span class="tier-icon">👍</span>78</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">古茗茶饮推出"星期三疯狂抢免单"活动，每周三12:00-13:00限时抢1万张免单券，需在小程序猜口令（3月4日口令为"龙井"）。活动持续至3月25日。因抢券难度极高，用户疯狂研究攻略甚至多设备操作。未抢到免单的用户可获保底8折券。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索结果显示古茗每周三1万张免单券秒空，用户需提前5分钟进入小程序预填口令、多次刷新才有机会抢到。抢券过程本身已成为社交话题，比喝奶茶本身更令人兴奋。</div>
+</div>
+<div class="section">
+<div class="product-name">「秒杀雷达」</div>
+<div class="product-pitch">全网限时免单/秒杀活动聚合提醒神器，再也不错过薅羊毛机会</div>
+<ul class="features">
+<li>实时聚合古茗、瑞幸、库迪等各大品牌免单/秒杀活动，含口令答案汇总</li>
+<li>智能倒计时+一键直达：活动前5分钟自动提醒并跳转至对应小程序抢券页面</li>
+<li>「抢券战绩」社区排行榜：晒免单成功率和攻略，把薅羊毛变成社交竞技</li>
+<li>AI口令预测：根据古茗等品牌历史口令规律（如当季新品名称）智能猜测本周答案</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>奶茶重度用户、热爱薅羊毛的年轻消费者、价格敏感型吃货</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="80"></div></div><div class="score-bar-value">64/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="70"></div></div><div class="score-bar-value">14/20</div></div>
+</div>
+</div>
+
+<!-- #5 建议基础教育学制缩短为532 - Score 76 -->
+<div class="card tier-good" data-score="76" data-rank="10">
+<div class="card-header">
+<div class="rank-badge rank-other">10</div>
+<div class="card-title-area">
+<div class="hotword">建议基础教育学制缩短为532</div>
+<div class="meta-row">
+<span class="heat">🔥 306,693</span>
+</div>
+</div>
+<div class="score-badge score-good"><span class="tier-icon">👍</span>76</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">有专家建议将基础教育从现行"六三三"制（12年）缩短为"五三二"制（10年），理由是高中第三年主要用于重复训练备考属于效率浪费，且当前学制导致本科毕业已22岁、读研读博后就业年龄接近30。教育部此前已辟谣称短期内不会调整。上海、北京已试行"五四三"学制。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索显示争论核心是"高三一年几乎只做重复训练"的效率问题。支持者认为智能化教学可压缩学习时间，反对者担忧教育质量下降。无论学制是否改革，"用更少时间掌握同样知识"的需求是真实存在的。</div>
+</div>
+<div class="section">
+<div class="product-name">「学霸压缩包」</div>
+<div class="product-pitch">AI驱动的知识点掌握度扫描仪，精准消灭薄弱环节拒绝无效刷题</div>
+<ul class="features">
+<li>AI知识图谱扫描：拍照上传试卷，自动诊断每个知识点的掌握程度并标记盲区</li>
+<li>「最小刷题路径」：只推送你不会的题型，避免高三式重复训练，最少的题量达到最大提升</li>
+<li>学制模拟器：输入当前成绩，对比模拟10年制vs12年制下的学习轨迹差异和就业时间线</li>
+<li>同龄人匿名学习数据对比：打破"别人都在拼命刷题"的信息茧房，了解真实水平分布</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>高中生及家长、备考学生、关注教育改革的教师群体</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="75"></div></div><div class="score-bar-value">60/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="80"></div></div><div class="score-bar-value">16/20</div></div>
+</div>
+</div>
+
+<!-- #6 2026两会日程预告 - Score 72 -->
+<div class="card tier-good" data-score="72" data-rank="3">
+<div class="card-header">
+<div class="rank-badge rank-3">3</div>
+<div class="card-title-area">
+<div class="hotword">2026两会日程预告</div>
+<div class="meta-row">
+<span class="heat">🔥 653,737</span>
+</div>
+</div>
+<div class="score-badge score-good"><span class="tier-icon">👍</span>72</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">政协十四届四次会议3月4日开幕、人大四次会议3月5日开幕，会期分别7天和8天。核心议程包括审议"十五五"规划纲要草案、《生态环境法典》（中国第二部法典）、《民族团结进步促进法》《国家发展规划法》等。安排3场记者会（经济、民生、外交）和3场"代表通道""部长通道"。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索结果显示两会议程涵盖11项议程、3部法律草案、多场记者会，信息量极大。普通人很难追踪哪些提案与自己的生活直接相关，需要一个"翻译器"将政策语言转化为个人影响。</div>
+</div>
+<div class="section">
+<div class="product-name">「两会跟我有啥关」</div>
+<div class="product-pitch">AI政策翻译器，输入你的身份标签，看两会提案怎么影响你的钱包和生活</div>
+<ul class="features">
+<li>输入职业、城市、年龄等标签，AI自动筛选"十五五"规划中与你相关的条目并翻译成人话</li>
+<li>「政策影响计算器」：模拟《生态环境法典》对你所在行业的合规成本影响等具体数字</li>
+<li>每日两会速递：3分钟卡片式摘要，"代表通道""部长通道"发言一句话总结</li>
+<li>提案投票互动：对"彩礼限额6万""学制缩短为532"等热门提案表态，看全国网友态度分布</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>关注时政但缺乏解读能力的普通上班族、创业者、大学生</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="70"></div></div><div class="score-bar-value">56/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="80"></div></div><div class="score-bar-value">16/20</div></div>
+</div>
+</div>
+
+<!-- #7 恋与深空 - Score 70 -->
+<div class="card tier-good" data-score="70" data-rank="9">
+<div class="card-header">
+<div class="rank-badge rank-other">9</div>
+<div class="card-title-area">
+<div class="hotword">恋与深空</div>
+<div class="meta-row">
+<span class="heat">🔥 308,541</span>
+</div>
+</div>
+<div class="score-badge score-good"><span class="tier-icon">👍</span>70</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">叠纸网络的恋爱手游《恋与深空》因与《尘白禁区》的"举报大战"登上热搜。《尘白禁区》联动邮政被举报停服后，其玩家反向举报《恋与深空》，导致该游戏与中国美术学院的"步步绘心晴"艺术联动活动被迫终止，场地紧急调整至杭州市内。事件暴露了二游圈子的对立和内容分级制度缺失。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索显示"举报大战"的根源是缺乏统一的内容分级标准——18+向恋爱游戏和大众平台之间没有明确边界。玩家群体间的"魔法对轰"最终导致双方受损，说明游戏内容审核需要更科学的机制。</div>
+</div>
+<div class="section">
+<div class="product-name">「游界分级」</div>
+<div class="product-pitch">游戏内容分级与适龄推荐社区，让对的内容找到对的人</div>
+<ul class="features">
+<li>社区驱动的游戏内容分级标签系统：玩家自主标注"尺度等级""适合场景""敏感内容预警"</li>
+<li>「冲突预警雷达」：当某游戏联动活动可能引发争议时，AI分析舆情并提前预警运营方</li>
+<li>家长/教师端：一键查看任意游戏的内容详情和社区评级，做出知情决策</li>
+<li>匿名玩家调解社区：不同游戏玩家可在中立平台讨论争议，避免社交平台上的"对轰"升级</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>游戏玩家、游戏运营团队、关心孩子游戏内容的家长</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="68"></div></div><div class="score-bar-value">54/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="80"></div></div><div class="score-bar-value">16/20</div></div>
+</div>
+</div>
+
+<!-- #8 淘宝38焕新周 - Score 68 -->
+<div class="card tier-good" data-score="68" data-rank="4">
+<div class="card-header">
+<div class="rank-badge rank-other">4</div>
+<div class="card-title-area">
+<div class="hotword">上淘宝38焕新周正式开卖</div>
+<div class="meta-row">
+<span class="hottag">新</span>
+</div>
+</div>
+<div class="score-badge score-good"><span class="tier-icon">👍</span>68</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">淘宝38焕新周3月4日00:00正式开售至3月9日，主打跨店满200减30、超级红包最高8888元、88VIP大额消费券等。首日0-1点前N件低至5折，每日0/10/20点开放爆款秒杀。最优叠加顺序为"官方立减→品类券→超级红包→88VIP折扣"，"悦己型"消费趋势明显。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索结果显示38焕新周有官方立减、品类券、超级红包、88VIP折扣四层优惠叠加，最优组合顺序需要专门研究。大促规则越来越像一道数学题。</div>
+</div>
+<div class="section">
+<div class="product-name">「凑单天才」</div>
+<div class="product-pitch">电商大促最优凑单方案计算器，四层优惠叠加一键算清</div>
+<ul class="features">
+<li>导入购物车商品清单，AI按"官方立减→品类券→红包→VIP折扣"顺序计算最优凑单方案</li>
+<li>「冗余好物推荐」：差几块钱凑满200减30时，推荐高性价比凑单商品</li>
+<li>跨平台到手价对比：同一商品在淘宝38焕新周vs京东3.8礼遇季的实际到手价一目了然</li>
+<li>大促日历：提前标注3月4日0点秒杀、每日整点场次等时间节点并自动设提醒</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>电商重度购物者、大促凑单困难户、家庭主妇/主夫</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="65"></div></div><div class="score-bar-value">52/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="80"></div></div><div class="score-bar-value">16/20</div></div>
+</div>
+</div>
+
+<!-- #9 让世界多一度她的空间 - Score 58 -->
+<div class="card tier-average" data-score="58" data-rank="8">
+<div class="card-header">
+<div class="rank-badge rank-other">8</div>
+<div class="card-title-area">
+<div class="hotword">让世界多一度她的空间</div>
+<div class="meta-row">
+<span class="hottag">新</span>
+</div>
+</div>
+<div class="score-badge score-average">58</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">三八节前夕的女性主题话题。搜索结果显示该概念聚焦女性在物理空间（建筑/艺术场域）、数字空间（电商/远程办公为5700万女性创造就业）和精神空间（女性叙事公共化）三个维度的探索与赋能。临港新片区推出"海鸥荟"平台，提供实习、创业、家庭支持全链条服务。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索结果提到数字经济为5700万女性创造就业机会，但"技术鸿沟可能加剧性别不平等"的隐忧也被学者提出。女性在数字空间中的赋能需要更具针对性的工具。</div>
+</div>
+<div class="section">
+<div class="product-name">「她经济罗盘」</div>
+<div class="product-pitch">女性创业者的一站式资源对接与技能提升平台</div>
+<ul class="features">
+<li>女性创业资源地图：聚合各地妇联、"她创联盟"、"海鸥荟"等官方扶持政策和创业担保信息</li>
+<li>数字技能速成课：针对电商、直播、远程办公等5700万女性就业方向的短视频教程</li>
+<li>「她故事」社区：参考"请听她说"对谈形式，女性创业者分享从0到1的真实经历</li>
+<li>行业薪资与机会透明度工具：各行业女性薪资中位数、晋升比例等数据可视化</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>女性创业者、职场女性、农村电商从业女性、关注性别平等的用户</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="55"></div></div><div class="score-bar-value">44/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="70"></div></div><div class="score-bar-value">14/20</div></div>
+</div>
+</div>
+
+<!-- #10 两会 - Score 55 -->
+<div class="card tier-average" data-score="55" data-rank="6">
+<div class="card-header">
+<div class="rank-badge rank-other">6</div>
+<div class="card-title-area">
+<div class="hotword">两会</div>
+<div class="meta-row">
+<span class="heat">🔥 386,802</span>
+<span class="hottag">焕新</span>
+</div>
+</div>
+<div class="score-badge score-average">55</div>
+</div>
+<div class="section">
+<div class="section-title">📰 事件脉络</div>
+<div class="event-summary">全国政协十四届四次会议3月4日开幕，首场"委员通道"已举行。今年聚焦"十五五"开局、新质生产力（AI、量子科技）、民生保障等议题。3000余名中外记者在梅地亚中心报名采访。议程与"2026两会日程预告"话题高度重叠，但该词条更偏向宏观讨论。</div>
+</div>
+<div class="section">
+<div class="section-title">💡 灵感来源</div>
+<div class="inspiration">搜索显示两会聚焦"新质生产力"——AI和量子科技等前沿领域。"十五五"规划将深度影响科技行业走向，但普通开发者很难将国家规划与自己的职业发展联系起来。</div>
+</div>
+<div class="section">
+<div class="product-name">「新质雷达」</div>
+<div class="product-pitch">将两会科技政策信号转化为个人职业机会地图</div>
+<ul class="features">
+<li>政策风向仪：实时追踪"十五五"规划中AI、量子科技、新能源等赛道的政策动态</li>
+<li>「我该学什么」推荐引擎：根据你的技术栈和城市，推荐与两会政策方向匹配的技能提升路径</li>
+<li>新质生产力岗位地图：聚合受政策利好的企业招聘信息和薪资水平</li>
+<li>政策解读播客：将委员通道、部长通道中的科技发言转化为5分钟技术人视角解读</li>
+</ul>
+<div class="target-users"><strong>目标用户：</strong>科技行业从业者、正在转型的程序员、关注政策红利的创业者</div>
+</div>
+<div class="score-bars">
+<div class="score-bar-group"><div class="score-bar-label">趣味性</div><div class="score-bar-track"><div class="score-bar-fill fun" data-width="53"></div></div><div class="score-bar-value">42/80</div></div>
+<div class="score-bar-group"><div class="score-bar-label">实用性</div><div class="score-bar-track"><div class="score-bar-fill useful" data-width="65"></div></div><div class="score-bar-value">13/20</div></div>
+</div>
+</div>
+
+</div>
+
+<button class="back-to-top" id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<div class="footer">
+微博热搜产品创意报告 · AI自动生成 · 2026年3月4日<br>
+数据来源：微博热搜API + WebSearch实时搜索 · 产品创意由AI生成，仅供灵感参考
+</div>
+
+</div>
+
 <script>
-const DATA = [{"rank": 1, "hotword": "中国芯片攻关取得新突破", "hotwordnum": 1069148, "hottag": "", "summary": "12月10日，海关总署发布的最新数据显示，<strong>今年前11个月中国集成电路出口达1.03万亿元，首次突破万亿元，同比增长20.3%</strong>。 “追光”6年多来，中心相继实多个关键芯片的国内首产或首次出样，让我国信息产业急需的“<strong>100G—400G系列光芯片”完成“多点突破”。</strong> 我国芯片领域取得新突破。 · 近日，北京大学化学与分子工程学院彭海琳教授团队及合作者通过冷冻电子断层扫描技术，首次在原位状态下解析了光刻胶分子在液相环境中的微观三维结构、界面分布与缠结行为，指导开发...", "product": {"name": "中国芯片攻关取得·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“见证历史！中国芯片，大消息！”及相关报道持续讨论该话题，热度值约 1069148，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 55, "usefulScore": 12, "totalScore": 67}}, {"rank": 2, "hotword": "推进祖国统一", "hotwordnum": 788281, "hottag": "", "summary": "四中全会公报发布。全会强调，全党全国各族人民团结起来为实现“十五五”规划而奋斗。坚持以党的自我革命引领社会革命，持之以恒推进全面从严治党，增强党的政治领导力、思想引领力、群众组织力、社会号召力，提高党领导经济社会发展能力和水平，为推进中国式现代化凝聚磅礴力量。要坚持和加强党中央集中统一领导，推进社会主义民主法治建设，充分调动全社会投身中国式现代化建设的积极性主动性创造性。促进香港、澳门长期繁荣稳定，推动两岸关系和平发展、<strong>推进祖国统一</strong>大业，推动构建人类命运共同体。 十八大代表畅谈对台工作：以最大善意推进两岸关系 2012-11-13 14:10 新华社北京10月16日电 习近平在二十大报告中强调，坚持和完善“一国两制”，<strong>推进祖国统一</strong>。", "product": {"name": "推进祖国统一·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“四中全会公报：推进祖国统一大业”及相关报道持续讨论该话题，热度值约 788281，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 52, "usefulScore": 9, "totalScore": 61}}, {"rank": 3, "hotword": "中国2025成绩单", "hotwordnum": 768138, "hottag": "", "summary": "今天，国家统计局发布了2025年我国经济运行的主要数据。初步核算显示，<strong>全年GDP增长5%，突破140万亿元</strong>。这份成绩单含金量很高，年初设定的目标任务圆满达成。国家统计局用“稳、进、新、韧”四个字来概括，特别是其... 新华财经上海1月19日电（记者杜康）19日，2025年中国宏观经济成绩单出炉，<strong>全年国内生产总值（GDP）达到1401879亿元，按不变价格计算，比上年增长5.0%。</strong>透过这份成绩单，我们看到中国经济展现出“向新而行”的鲜明特征。... 1月19日，2025年中国经济成绩单发布——<strong>国内生产总值（GDP）首次跨越140万亿大关，比上年增长5.0%。</strong>", "product": {"name": "中国2025成绩·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“中国2025年成绩单含金量满满 新动能积厚成势_中华网”及相关报道持续讨论该话题，热度值约 768138，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 52, "usefulScore": 12, "totalScore": 64}}, {"rank": 4, "hotword": "尚界Z7双箭齐发", "hotwordnum": 0, "hottag": "", "summary": "据IT之家此前报道，鸿蒙智行尚界汽车在 1 月 7 日官宣了一款新车 —— 尚界 Z7，宣传语为“比新一代，更期待”。 · 尚界（SAIC）是上汽集团与华为合作打造的智能汽车品牌，属于鸿蒙智行第五个“界”，采用智选车模式合作开发。尚界首车 —— 尚界 H5 已于 2025 年 9 月 23 日晚上市，售价 15.98 万元起，是目前鸿蒙智行最便宜的车型。 #尚界Z7双箭齐发#鸿蒙智行在3月4日的技术焕新发布会上正式官宣了尚界Z7系列双车——<strong>风尚科技轿跑Z7与首款猎装车型Z7T</strong>，以“双箭齐发”策略瞄准年轻用户多元出行场景，预计3月底公... 鸿蒙智行尚界汽车官方今日发布了尚界 Z7 轿跑官图（贴有伪装车衣），从图片和微博配文来看，尚界 Z7 已开启冰雪极端环境测试。后续还有望发布", "product": {"name": "尚界Z7双箭齐发·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“鸿蒙智行尚界 Z7 无伪装视频发布，全系搭载华为途灵平台 - IT之家”及相关报道持续讨论该话题，热度值约 0，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 45, "usefulScore": 9, "totalScore": 54}}, {"rank": 5, "hotword": "建议三孩每月补贴5000元至3岁", "hotwordnum": 763014, "hottag": "", "summary": "国家卫健委2024年10月介绍...夏已实现育儿补贴省级层面政策覆盖，<strong>云南对生育二孩、三孩的家庭分别发放2000元、5000元的一次性补贴，每年发放800元的育儿补贴到3周岁</strong>；宁夏对生育二孩、三孩的家庭发放2000元... 2021年7月，四川省攀枝花市在全国率先推出“为二、三孩家庭每孩每月发放500元补贴金直至孩子3岁”的政策； · 陕西省神木市的生育补贴、育儿补贴方案明确，为生育二孩家庭一次性补贴5000元，三孩家庭一次性补贴1万元，且每年给二孩家庭3000元育儿补贴，发放至孩子2周岁；三孩家庭每年10000元育儿补贴，发放至孩子3周岁。 “育儿补贴是新中国成立...卫生健康委副主任郭燕红介绍，现阶段，<strong>国家育儿补贴的基础标准为每孩每年3600元，至其年满3周", "product": {"name": "建议三孩每月补贴·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“如何发放育儿补贴？国家卫健委正会同有关部门起草操作方案”及相关报道持续讨论该话题，热度值约 763014，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 52, "usefulScore": 12, "totalScore": 64}}, {"rank": 6, "hotword": "电影我的妈耶定档", "hotwordnum": 762636, "hottag": "官宣", "summary": "《我的妈耶》（又名《我认识我妈妈》《我的妈呀》《Now I Met Her》）是2025年由肖麓西执导、宁浩监制，吴扶俐、张宇欣、肖麓西编剧的家庭温情喜剧电影，创作于2024年，由坏猴子(上海)文化传播有限公司、上海华策电影有限公司备案（影剧备字〔2023〕第302号）。影片讲述18岁叛逆少年张十一（黄明昊饰）通过母亲李东玉（马思纯饰）的日记，追溯其成长故事，逐渐理解母亲短暂却充满爱与勇气的一生。马思纯、白客、黄明昊领衔主演，孙阳特别出演， 2025年1月22日，备受大家关注的家庭温情喜剧电影《我的妈耶》，正式发布了贴片预告。这一消息，瞬间就让广大观众满心期待，迫不及待想要了解更多。 ... 电影《我的妈耶》讲述故事的方式十分新颖独特。儿子张十一（由黄明昊饰演），从出生起就没见过已经离世的妈妈李东玉（马思纯饰演", "product": {"name": "电影我的妈耶定档·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“我的妈耶_百度百科”及相关报道持续讨论该话题，热度值约 762636，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 52, "usefulScore": 9, "totalScore": 61}}, {"rank": 7, "hotword": "伊朗袭击以国防部大楼", "hotwordnum": 762505, "hottag": "", "summary": "We cannot provide a description for this page right now We cannot provide a description for this page right now We cannot provide a description for this page right now", "product": {"name": "伊朗袭击以国防部·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“伊朗袭击以国防部大楼，美称暂无派遣地面部队计划，最新情况”及相关报道持续讨论该话题，热度值约 762505，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 52, "usefulScore": 9, "totalScore": 61}}, {"rank": 8, "hotword": "奶奶你是一块金子放错了地方", "hotwordnum": 646182, "hottag": "新", "summary": "作者：南阳市中级人民法院 退休法官刘鹏 发布时间：2022-11-04 10:23:43 · 奶奶是我最崇拜的人之一。 岁月的烟尘，虽然模糊了那久远的记忆，但奶奶的音容笑貌在我的脑海时时浮现，且随着我年龄的增长而愈加清晰。 ... 百度汉语 · 刘奶奶找牛奶奶买榴……(绕口令) · 刘奶奶找牛奶奶买榴莲牛奶，牛奶奶给刘奶奶拿榴莲牛奶，刘奶奶说牛奶奶的榴莲牛奶不如柳奶奶的榴莲牛奶，牛奶奶说柳奶奶的榴莲牛奶会流奶，柳奶奶听见了大骂牛奶奶... 我在《夺嫡战》一文中提到这个细节，是为了说明这个“王夫人的丫鬟”很可能是赵姨娘安插在王夫人身边的内线（彩云或者彩霞），她来是打着“太太等你（赵姨娘）”的旗号，好将马道婆支走，以便向赵姨娘通风报信；同时，书中安排这个细节也使马道婆与赵姨娘的密谋告一段落，从而推动情节发展。 · ", "product": {"name": "奶奶你是一块金子·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“奶奶的格言 - 河南省高级人民法院”及相关报道持续讨论该话题，热度值约 646182，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 51, "usefulScore": 9, "totalScore": 60}}, {"rank": 9, "hotword": "阿里已批准林俊旸离职", "hotwordnum": 645769, "hottag": "", "summary": "（杭州综合讯）<strong>阿里巴巴旗下人工智能（AI）应用“千问”大模型技术负责人林俊旸宣布卸任</strong>，消息公布后，多名千问核心技术团队的成员宣布离职。 消息传开后，有Qwen团队成员同步宣布了离职决定。观察者网获悉，3月3日下午林俊旸已向阿里提交辞职申请。同一天，千问的后训练负责人郁博文也正式离职，其工作将由今年初加入通义实验室的前Google DeepMind高级资深研... 这可能会引发阿里高层对于年轻人才培养制度的反思。从林俊旸的履历看，在短短6年内他从应届生跃升P10并被委以“带队Qwen”的重任，客观讲，这可以算是“知人善任”、“慧眼识珠”。 · 但这样自己一手培养的、被超额提拔、委以重任的年轻才俊，为何能够在深夜于公开平台官宣“卸任”？这可能是一个急需阿里研究的问题。毕竟90后这代", "product": {"name": "阿里已批准林俊旸·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“阿里AI技术灵魂人物林俊旸宣布卸任 | 联合早报”及相关报道持续讨论该话题，热度值约 645769，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 51, "usefulScore": 9, "totalScore": 60}}, {"rank": 10, "hotword": "方寸之间看见中国", "hotwordnum": 584588, "hottag": "", "summary": "这件事已经过去了一段时间，但对我的影响却如涓涓细流般蔓延至今。中国地大物博、历史悠久，想要全方位展示给世界却是一项庞大的工程。但也正因如此，面对每一个不了解中国的人，我们其实拥有许多方法和角度让他们认识中国。以中国的佛像艺术为例，其发展源远流长，每个时期每个朝代都有不同的特征，但对大多数外国人而言，往往只停留在最表层的印象中。对于我的这位教授来说，或许就是那次简单的分享，加深了他对中国文化的印象。倘若能由此让他从佛像开始逐渐了解中国，也是一份令我欣慰的小小成就。 国内首部建筑大师空间纪实片《方寸之间》| 黄印武：回应在地文化与传统 · 其实是我们如何容纳我们生活的一个途径 本书收集周有光先生八十五岁退休之后的所有重要作品。周先生自“离开办公室”后，就告别了语言文字的专业研究，开始撰写大量思想文化随笔，内容涉及中", "product": {"name": "方寸之间看见中国·灵感雷达", "pitch": "把热搜事件自动拆成可执行产品机会卡，半小时一更。", "inspiration": "灵感来源：检索结果显示“方寸之间看中国-中国教育新闻网”及相关报道持续讨论该话题，热度值约 584588，适合做实时机会发现。", "features": ["话题脉络 3 句摘要", "一键生成产品机会卡与评分", "按热度与评分排序筛选"], "targetUsers": "产品经理、增长运营、内容团队", "funScore": 50, "usefulScore": 12, "totalScore": 62}}];
-let sortBy='rank', filterBy='all'; const cards=document.getElementById('cards');
-function tier(s){if(s>=80)return 'top';if(s>=60)return 'mid';return 'low'}
-function pass(item){if(filterBy==='all')return true;if(!item.product)return filterBy==='low';return tier(item.product.totalScore)===filterBy}
-function render(){
- const list=DATA.filter(pass).sort((a,b)=>sortBy==='score'?((b.product?.totalScore||0)-(a.product?.totalScore||0)):a.rank-b.rank);
- const valid=DATA.filter(x=>x.product); const avg=valid.reduce((s,x)=>s+x.product.totalScore,0)/Math.max(1,valid.length);
- document.getElementById('stats').textContent=`总话题 ${DATA.length} · 有效分析 ${valid.length} · 平均分 ${avg.toFixed(1)}`;
- cards.innerHTML=list.map(x=>{const p=x.product;const score=p?.totalScore||0;const cls=p?(score>=80?'tier-top':(score>=60?'tier-mid':'tier-low')):'tier-low';
-  return `<div class="card ${cls}"><div>#${x.rank} ${x.hotword} ${x.hottag?`<span class='hot'>${x.hottag}</span>`:''}</div><div class='muted'>热度：${x.hotwordnum}</div><p>${x.summary}</p>${p?`<p><b>${p.name}</b>：${p.pitch}</p><p class='muted'>${p.inspiration}</p><p>功能：${p.features.join(' / ')}</p><p>目标用户：${p.targetUsers}</p><div class='score'><div class='bar' data-w='${score}'></div></div><div class='muted'>总分 ${score}（趣味 ${p.funScore} + 实用 ${p.usefulScore}）</div>`:'<p class="muted">未生成产品创意</p>'}</div>`
- }).join('');
- const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.style.width=e.target.dataset.w+'%'}),{threshold:.3});
- document.querySelectorAll('.bar').forEach(b=>io.observe(b));
+(function(){
+var observer=new IntersectionObserver(function(entries){
+entries.forEach(function(e){
+if(e.isIntersecting){e.target.style.width=e.target.dataset.width+'%';observer.unobserve(e.target)}
+})
+},{threshold:.3});
+document.querySelectorAll('.score-bar-fill').forEach(function(el){observer.observe(el)});
+
+var btn=document.getElementById('backToTop');
+window.addEventListener('scroll',function(){btn.style.display=window.scrollY>400?'flex':'none'});
+
+var cards=document.getElementById('cards');
+var allCards=Array.from(cards.querySelectorAll('.card'));
+
+document.querySelectorAll('[data-sort]').forEach(function(b){
+b.addEventListener('click',function(){
+this.parentNode.querySelectorAll('.nav-btn').forEach(function(x){x.classList.remove('active')});
+this.classList.add('active');
+var type=this.dataset.sort;
+var sorted=allCards.slice().sort(function(a,b){
+if(type==='score')return parseInt(b.dataset.score)-parseInt(a.dataset.score);
+return parseInt(a.dataset.rank)-parseInt(b.dataset.rank);
+});
+sorted.forEach(function(c){cards.appendChild(c)});
+applyFilter();
+})
+});
+
+document.querySelectorAll('[data-filter]').forEach(function(b){
+b.addEventListener('click',function(){
+this.parentNode.querySelectorAll('.nav-btn').forEach(function(x){x.classList.remove('active')});
+this.classList.add('active');
+applyFilter();
+})
+});
+
+function applyFilter(){
+var f=document.querySelector('[data-filter].active');
+if(!f)return;
+var tier=f.dataset.filter;
+allCards.forEach(function(c){
+var s=parseInt(c.dataset.score);
+var show=true;
+if(tier==='excellent')show=s>=80;
+else if(tier==='good')show=s>=60&&s<80;
+else if(tier==='average')show=s<60;
+c.style.display=show?'':'none';
+});
 }
-document.querySelectorAll('[data-sort]').forEach(b=>b.onclick=()=>{sortBy=b.dataset.sort;render()});
-document.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filterBy=b.dataset.filter;render()});render();
-</script></body></html>
+})();
+</script>
+</body>
+</html>
