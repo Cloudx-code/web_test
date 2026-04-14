@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudx · LOL 战绩查询</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#09111f;--card:#121c31;--line:#24314f;--text:#eef4ff;--sub:#95a4c7;--primary:#5b8cff;--primary2:#6ee7f9;--ok:#22c55e;--bad:#ef4444}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:radial-gradient(1200px 500px at 20% -10%, #1a2950 0%, var(--bg) 60%);color:var(--text);min-height:100vh}
+.container{max-width:1120px;margin:0 auto;padding:24px 16px 64px}
+a{color:#a6c7ff;text-decoration:none}.top-link{margin-bottom:18px;display:inline-block;color:var(--sub)}
+h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);line-height:1.7;margin-bottom:24px}
+.card{background:linear-gradient(180deg,#15213a,#10182a);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 28px rgba(0,0,0,.18)}
+.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px}.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:6px}.field input,.field select{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:#0b1323;color:var(--text);outline:none}.field input:focus,.field select:focus{border-color:#4b74d6}
+.actions{margin-top:14px;display:flex;gap:10px;align-items:center}.btn{border:none;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;color:#fff;background:linear-gradient(90deg,var(--primary),var(--primary2))}.btn.secondary{background:#16233d;color:#d7e6ff;border:1px solid var(--line)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.status{margin-top:14px;color:var(--sub);font-size:14px}.summary{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-top:18px}.panel{background:#0b1323;border:1px solid var(--line);border-radius:16px;padding:16px}.panel h3{font-size:16px;margin-bottom:12px}
+.meta-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.meta-item{background:#111b31;border:1px solid #1f2b45;border-radius:12px;padding:12px}.meta-item .k{font-size:12px;color:var(--sub);margin-bottom:6px}.meta-item .v{font-size:15px;font-weight:700;word-break:break-all}
+.match-list{display:flex;flex-direction:column;gap:10px;margin-top:18px}.match{display:grid;grid-template-columns:88px 1fr auto;gap:14px;align-items:center;background:#0e172b;border:1px solid #1d2944;border-radius:16px;padding:14px}.champ{width:88px;height:88px;border-radius:16px;overflow:hidden;background:#101b33;border:1px solid #24314f}.champ img{width:100%;height:100%;object-fit:cover}.badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700}.badge.win{background:rgba(34,197,94,.12);color:#7ff0a7}.badge.lose{background:rgba(239,68,68,.12);color:#ff9797}.match .title{font-size:16px;font-weight:700;line-height:1.5}.match .sub{font-size:13px;color:var(--sub);margin-top:6px;line-height:1.6}.match .right{font-size:13px;color:var(--sub);text-align:right}.empty{padding:36px 0;text-align:center;color:var(--sub)}
+.helper{margin-top:16px;font-size:12px;color:var(--sub);line-height:1.8}
+@media (max-width: 960px){.form-grid,.summary{grid-template-columns:1fr}.match{grid-template-columns:64px 1fr}.champ{width:64px;height:64px}.match .right{grid-column:2;text-align:left}}
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="top-link" href="/">← 返回主页</a>
+  <h1>LOL 国服战绩查询</h1>
+  <p class="subtitle">修复版：走与音乐模块一致的 Vercel API 路由 /api/lol_query。</p>
+
+  <div class="card">
+    <div class="form-grid">
+      <div class="field">
+        <label>玩家昵称</label>
+        <input id="nickname" placeholder="例如：好机油鳄鱼 或 好机油鳄鱼#10664">
+      </div>
+      <div class="field">
+        <label>大区</label>
+        <select id="area"></select>
+      </div>
+      <div class="field">
+        <label>模式</label>
+        <select id="modelId">
+          <option value="1">召唤师峡谷</option>
+          <option value="2">云顶之弈</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>返回场次</label>
+        <select id="allCount">
+          <option>10</option>
+          <option selected>20</option>
+          <option>30</option>
+          <option>50</option>
+          <option>100</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="queryBtn">查询战绩</button>
+      <button class="btn secondary" id="fillDemoBtn">填入示例</button>
+    </div>
+    <div class="status" id="status">待查询</div>
+
+    <div id="resultWrap" style="display:none">
+      <div class="summary">
+        <div class="panel">
+          <h3>玩家概览</h3>
+          <div class="meta-list" id="playerMeta"></div>
+        </div>
+        <div class="panel">
+          <h3>查询信息</h3>
+          <div class="meta-list" id="queryMeta"></div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:14px;">
+        <h3>最近战绩</h3>
+        <div id="matchList" class="match-list"></div>
+      </div>
+    </div>
+
+    <div class="helper">若这里仍 404，请同时看首页页脚版本是否已更新；那可以直接判断线上是否吃到最新 commit。</div>
+  </div>
+</div>
+<script>
+const AREAS = [[1,'艾欧尼亚'],[2,'比尔吉沃特'],[3,'祖安'],[4,'诺克萨斯'],[5,'班德尔城'],[6,'德玛西亚'],[7,'皮尔特沃夫'],[8,'战争学院'],[9,'弗雷尔卓德'],[10,'巨神峰'],[11,'雷瑟守备'],[12,'无畏先锋'],[13,'裁决之地'],[14,'黑色玫瑰'],[15,'暗影岛'],[16,'恕瑞玛'],[17,'钢铁烈阳'],[18,'水晶之痕'],[19,'均衡教派'],[20,'扭曲丛林'],[21,'教育网专区'],[22,'影流'],[23,'守望之海'],[24,'征服之海'],[25,'卡拉曼达'],[26,'巨龙之巢'],[27,'皮城警备'],[30,'男爵领域'],[31,'峡谷之巅']];
+const $ = s => document.querySelector(s);
+const areaSel = $('#area');
+AREAS.forEach(([id,name]) => { const op = document.createElement('option'); op.value = id; op.textContent = name; if (id===14) op.selected = true; areaSel.appendChild(op); });
+$('#fillDemoBtn').onclick = () => { $('#nickname').value='好机油鳄鱼'; $('#area').value='14'; $('#modelId').value='1'; $('#allCount').value='10'; };
+function esc(s=''){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function stripHtml(s=''){return String(s).replace(/<br\s*\/?>/gi,' / ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()}
+function championIcon(id){ return id ? `https://wegame.gtimg.com/g.26-r.c2d3c/helper/lol/assis/images/resources/champions/${id}.png` : '' }
+function metaItem(k,v){ return `<div class="meta-item"><div class="k">${esc(k)}</div><div class="v">${esc(v ?? '-')}</div></div>` }
+$('#queryBtn').onclick = doQuery;
+$('#nickname').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery(); });
+async function doQuery(){
+  const nickname = $('#nickname').value.trim();
+  if(!nickname){ $('#status').textContent='请输入玩家昵称'; return; }
+  const areaId = $('#area').value, areaName = $('#area').selectedOptions[0].textContent, allCount = $('#allCount').value, modelId = $('#modelId').value;
+  const btn = $('#queryBtn'); btn.disabled = true; $('#status').textContent='查询中...'; $('#resultWrap').style.display='none';
+  try {
+    const qs = new URLSearchParams({ nickname, areaId, areaName, allCount, modelId, filter:'1', seleMe:'1' });
+    const res = await fetch('/api/lol_query?' + qs.toString());
+    const json = await res.json();
+    if(!res.ok || json.code !== 0){ $('#status').textContent = (json && json.msg) ? json.msg : `查询失败（HTTP ${res.status}）`; return; }
+    renderResult(json.data, {nickname, areaId, areaName, allCount, modelId});
+    $('#status').textContent='查询成功'; $('#resultWrap').style.display='';
+  } catch(e) { $('#status').textContent = '请求失败：' + (e?.message || '未知错误'); }
+  finally { btn.disabled = false; }
+}
+function renderResult(data,q){
+  const bi = data?.battleInfo || data?.BattleInfo || {}; const matches = data?.data || data?.Data || [];
+  $('#playerMeta').innerHTML = [metaItem('昵称', bi.nameInfoNew || bi.NameInfoNew || q.nickname),metaItem('等级', bi.level || bi.Level || '-'),metaItem('在线状态', data?.onlineInfo || data?.OnlineInfo || '-'),metaItem('大区', q.areaName),metaItem('OpenID', bi.openId || bi.OpenID || '-'),metaItem('称号 / 赞', [bi.ext || bi.Ext, bi.praise || bi.Praise].filter(Boolean).join(' / ') || '-')].join('');
+  $('#queryMeta').innerHTML = [metaItem('模式', q.modelId === '2' ? '云顶之弈' : '召唤师峡谷'),metaItem('返回场次', q.allCount),metaItem('接口 code', data?.code ?? data?.Code ?? '-'),metaItem('消息', data?.message || data?.Message || '-')].join('');
+  const list = $('#matchList'); if(!matches.length){ list.innerHTML = '<div class="empty">没有返回战绩数据</div>'; return; }
+  list.innerHTML = matches.map(m => { const win = Number(m.isWin ?? m.IsWin)===1; const icon = championIcon(m.championId ?? m.ChampionID); const title = stripHtml(m.title || m.Title || ''); const time = m.titleTime || m.TitleTime || '-'; const gameId = m.gameId || m.GameID || '-'; return `<div class="match"><div class="champ">${icon?`<img src="${icon}" alt="champion">`:''}</div><div><div><span class="badge ${win?'win':'lose'}">${win?'胜':'败'}</span></div><div class="title">${esc(title || '无标题战绩')}</div><div class="sub">时间：${esc(time)} · GameID：${esc(gameId)}</div></div><div class="right">英雄 ID：${esc(m.championId ?? m.ChampionID ?? '-')}</div></div>`; }).join('');
+}
+</script>
+</body>
+</html>

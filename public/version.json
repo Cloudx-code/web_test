@@ -1,5 +1,7 @@
 {
-  "version": "2026-02-12-2300",
-  "note": "trigger fresh vercel deployment with menu homepage",
-  "expected_commits": ["96082a7", "d66bc27"]
+  "version": "2026-04-14-2059",
+  "note": "lol module route verification build",
+  "expected_commits": ["23062b1", "b782555"],
+  "lol_api": "/api/lol_query",
+  "lol_page": "/lol.html"
 }
