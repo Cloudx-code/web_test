@@ -38,6 +38,17 @@ h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);li
         <select id="area"></select>
       </div>
       <div class="field">
+        <label>类型</label>
+        <select id="filter">
+          <option value="1" selected>全部</option>
+          <option value="4">匹配</option>
+          <option value="5">大乱斗</option>
+          <option value="2">排位</option>
+          <option value="3">灵活排位</option>
+          <option value="6">MVP</option>
+        </select>
+      </div>
+      <div class="field">
         <label>模式</label>
         <select id="modelId">
           <option value="1">召唤师峡谷</option>
@@ -45,10 +56,16 @@ h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);li
         </select>
       </div>
       <div class="field">
+        <label>信息</label>
+        <select id="infoMode">
+          <option value="quick" selected>速查</option>
+        </select>
+      </div>
+      <div class="field">
         <label>返回场次</label>
         <select id="allCount">
-          <option>10</option>
-          <option selected>20</option>
+          <option selected>10</option>
+          <option>20</option>
           <option>30</option>
           <option>50</option>
           <option>100</option>
@@ -58,7 +75,6 @@ h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);li
 
     <div class="actions">
       <button class="btn" id="queryBtn">查询战绩</button>
-      <button class="btn secondary" id="fillDemoBtn">填入示例</button>
     </div>
     <div class="status" id="status">待查询</div>
 
@@ -86,8 +102,7 @@ h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);li
 const AREAS = [[1,'艾欧尼亚'],[2,'比尔吉沃特'],[3,'祖安'],[4,'诺克萨斯'],[5,'班德尔城'],[6,'德玛西亚'],[7,'皮尔特沃夫'],[8,'战争学院'],[9,'弗雷尔卓德'],[10,'巨神峰'],[11,'雷瑟守备'],[12,'无畏先锋'],[13,'裁决之地'],[14,'黑色玫瑰'],[15,'暗影岛'],[16,'恕瑞玛'],[17,'钢铁烈阳'],[18,'水晶之痕'],[19,'均衡教派'],[20,'扭曲丛林'],[21,'教育网专区'],[22,'影流'],[23,'守望之海'],[24,'征服之海'],[25,'卡拉曼达'],[26,'巨龙之巢'],[27,'皮城警备'],[30,'男爵领域'],[31,'峡谷之巅']];
 const $ = s => document.querySelector(s);
 const areaSel = $('#area');
-AREAS.forEach(([id,name]) => { const op = document.createElement('option'); op.value = id; op.textContent = name; if (id===14) op.selected = true; areaSel.appendChild(op); });
-$('#fillDemoBtn').onclick = () => { $('#nickname').value='好机油鳄鱼'; $('#area').value='14'; $('#modelId').value='1'; $('#allCount').value='10'; };
+AREAS.forEach(([id,name]) => { const op = document.createElement('option'); op.value = id; op.textContent = name; if (id===16) op.selected = true; areaSel.appendChild(op); });
 function esc(s=''){return String(s).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function stripHtml(s=''){return String(s).replace(/<br\s*\/?>/gi,' / ').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()}
 function championIcon(id){ return id ? `https://wegame.gtimg.com/g.26-r.c2d3c/helper/lol/assis/images/resources/champions/${id}.png` : '' }
@@ -97,10 +112,10 @@ $('#nickname').addEventListener('keydown', e => { if (e.key === 'Enter') doQuery
 async function doQuery(){
   const nickname = $('#nickname').value.trim();
   if(!nickname){ $('#status').textContent='请输入玩家昵称'; return; }
-  const areaId = $('#area').value, areaName = $('#area').selectedOptions[0].textContent, allCount = $('#allCount').value, modelId = $('#modelId').value;
+  const areaId = $('#area').value, areaName = $('#area').selectedOptions[0].textContent, allCount = $('#allCount').value, modelId = $('#modelId').value, filter = $('#filter').value;
   const btn = $('#queryBtn'); btn.disabled = true; $('#status').textContent='查询中...'; $('#resultWrap').style.display='none';
   try {
-    const qs = new URLSearchParams({ nickname, areaId, areaName, allCount, modelId, filter:'1', seleMe:'1' });
+    const qs = new URLSearchParams({ nickname, areaId, areaName, allCount, modelId, filter, seleMe:'1' });
     const res = await fetch('/api/lol_query?' + qs.toString());
     const json = await res.json();
     if(!res.ok || json.code !== 0){ $('#status').textContent = (json && json.msg) ? json.msg : `查询失败（HTTP ${res.status}）`; return; }
@@ -111,7 +126,7 @@ async function doQuery(){
 }
 function renderResult(data,q){
   const bi = data?.battleInfo || data?.BattleInfo || {}; const matches = data?.data || data?.Data || [];
-  $('#playerMeta').innerHTML = [metaItem('昵称', bi.nameInfoNew || bi.NameInfoNew || q.nickname),metaItem('等级', bi.level || bi.Level || '-'),metaItem('在线状态', data?.onlineInfo || data?.OnlineInfo || '-'),metaItem('大区', q.areaName),metaItem('OpenID', bi.openId || bi.OpenID || '-'),metaItem('称号 / 赞', [bi.ext || bi.Ext, bi.praise || bi.Praise].filter(Boolean).join(' / ') || '-')].join('');
+  $('#playerMeta').innerHTML = [metaItem('昵称', bi.nameInfoNew || bi.NameInfoNew || q.nickname),metaItem('等级', bi.level || bi.Level || '-'),metaItem('在线状态', data?.onlineInfo || data?.OnlineInfo || '-'),metaItem('大区', q.areaName),metaItem('称号 / 赞', [bi.ext || bi.Ext, bi.praise || bi.Praise].filter(Boolean).join(' / ') || '-')].join('');
   $('#queryMeta').innerHTML = [metaItem('模式', q.modelId === '2' ? '云顶之弈' : '召唤师峡谷'),metaItem('返回场次', q.allCount),metaItem('接口 code', data?.code ?? data?.Code ?? '-'),metaItem('消息', data?.message || data?.Message || '-')].join('');
   const list = $('#matchList'); if(!matches.length){ list.innerHTML = '<div class="empty">没有返回战绩数据</div>'; return; }
   list.innerHTML = matches.map(m => { const win = Number(m.isWin ?? m.IsWin)===1; const icon = championIcon(m.championId ?? m.ChampionID); const title = stripHtml(m.title || m.Title || ''); const time = m.titleTime || m.TitleTime || '-'; const gameId = m.gameId || m.GameID || '-'; return `<div class="match"><div class="champ">${icon?`<img src="${icon}" alt="champion">`:''}</div><div><div><span class="badge ${win?'win':'lose'}">${win?'胜':'败'}</span></div><div class="title">${esc(title || '无标题战绩')}</div><div class="sub">时间：${esc(time)} · GameID：${esc(gameId)}</div></div><div class="right">英雄 ID：${esc(m.championId ?? m.ChampionID ?? '-')}</div></div>`; }).join('');
