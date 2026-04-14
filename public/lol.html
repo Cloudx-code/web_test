@@ -79,18 +79,9 @@ h1{font-size:32px;margin:4px 0 8px;font-weight:800}.subtitle{color:var(--sub);li
     <div class="status" id="status">待查询</div>
 
     <div id="resultWrap" style="display:none">
-      <div class="summary">
-        <div class="panel">
-          <h3>玩家概览</h3>
-          <div class="meta-list" id="playerMeta"></div>
-        </div>
-        <div class="panel">
-          <h3>查询信息</h3>
-          <div class="meta-list" id="queryMeta"></div>
-        </div>
-      </div>
       <div class="panel" style="margin-top:14px;">
-        <h3>最近战绩</h3>
+        <h3>查询结果</h3>
+        <div class="meta-list" id="queryMeta"></div>
         <div id="matchList" class="match-list"></div>
       </div>
     </div>
@@ -125,9 +116,8 @@ async function doQuery(){
   finally { btn.disabled = false; }
 }
 function renderResult(data,q){
-  const bi = data?.battleInfo || data?.BattleInfo || {}; const matches = data?.data || data?.Data || [];
-  $('#playerMeta').innerHTML = [metaItem('昵称', bi.nameInfoNew || bi.NameInfoNew || q.nickname),metaItem('等级', bi.level || bi.Level || '-'),metaItem('在线状态', data?.onlineInfo || data?.OnlineInfo || '-'),metaItem('大区', q.areaName),metaItem('称号 / 赞', [bi.ext || bi.Ext, bi.praise || bi.Praise].filter(Boolean).join(' / ') || '-')].join('');
-  $('#queryMeta').innerHTML = [metaItem('模式', q.modelId === '2' ? '云顶之弈' : '召唤师峡谷'),metaItem('返回场次', q.allCount),metaItem('接口 code', data?.code ?? data?.Code ?? '-'),metaItem('消息', data?.message || data?.Message || '-')].join('');
+  const matches = data?.data || data?.Data || [];
+  $('#queryMeta').innerHTML = [metaItem('模式', q.modelId === '2' ? '云顶之弈' : '召唤师峡谷'),metaItem('类型', $('#filter').selectedOptions[0]?.textContent || '全部'),metaItem('返回场次', q.allCount),metaItem('接口 code', data?.code ?? data?.Code ?? '-'),metaItem('消息', data?.message || data?.Message || '-'),metaItem('状态', matches && matches.length ? '有结果' : '暂无结果')].join('');
   const list = $('#matchList'); if(!matches.length){ list.innerHTML = '<div class="empty">没有返回战绩数据</div>'; return; }
   list.innerHTML = matches.map(m => { const win = Number(m.isWin ?? m.IsWin)===1; const icon = championIcon(m.championId ?? m.ChampionID); const title = stripHtml(m.title || m.Title || ''); const time = m.titleTime || m.TitleTime || '-'; const gameId = m.gameId || m.GameID || '-'; return `<div class="match"><div class="champ">${icon?`<img src="${icon}" alt="champion">`:''}</div><div><div><span class="badge ${win?'win':'lose'}">${win?'胜':'败'}</span></div><div class="title">${esc(title || '无标题战绩')}</div><div class="sub">时间：${esc(time)} · GameID：${esc(gameId)}</div></div><div class="right">英雄 ID：${esc(m.championId ?? m.ChampionID ?? '-')}</div></div>`; }).join('');
 }
