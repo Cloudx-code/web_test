@@ -3,24 +3,28 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"handler/internal/lol"
 	"handler/internal/provider"
 	"io"
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 type Server struct {
 	provider provider.Provider
+	lol      *lol.Client
 	mux      *http.ServeMux
 }
 
 func New(p provider.Provider) *Server {
-	s := &Server{provider: p, mux: http.NewServeMux()}
+	s := &Server{provider: p, lol: lol.New(), mux: http.NewServeMux()}
 	s.mux.HandleFunc("/api/search", s.handleSearch)
 	s.mux.HandleFunc("/api/play", s.handlePlay)
 	s.mux.HandleFunc("/api/download", s.handleDownload)
+	s.mux.HandleFunc("/api/lol/query", s.handleLOLQuery)
 	s.mux.Handle("/", http.FileServer(http.Dir("static")))
 	return s
 }
@@ -133,6 +137,40 @@ func (s *Server) handleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
+}
+
+func (s *Server) handleLOLQuery(w http.ResponseWriter, r *http.Request) {
+	nickname := strings.TrimSpace(r.URL.Query().Get("nickname"))
+	areaName := strings.TrimSpace(r.URL.Query().Get("areaName"))
+	if nickname == "" || areaName == "" {
+		jsonErr(w, "缺少 nickname 或 areaName", 400)
+		return
+	}
+
+	areaID, _ := strconv.Atoi(r.URL.Query().Get("areaId"))
+	allCount, _ := strconv.Atoi(r.URL.Query().Get("allCount"))
+	filter, _ := strconv.Atoi(r.URL.Query().Get("filter"))
+	modelID, _ := strconv.Atoi(r.URL.Query().Get("modelId"))
+	seleMe, _ := strconv.Atoi(r.URL.Query().Get("seleMe"))
+	openID := strings.TrimSpace(r.URL.Query().Get("openId"))
+
+	resp, err := s.lol.Query(lol.QueryParams{
+		Nickname: nickname,
+		AllCount: allCount,
+		AreaID:   areaID,
+		AreaName: areaName,
+		SeleMe:   seleMe,
+		Filter:   filter,
+		OpenID:   openID,
+		ModelID:  modelID,
+	})
+	if err != nil {
+		jsonErr(w, fmt.Sprintf("LOL 查询失败: %v", err), 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{"code": 0, "data": resp})
 }
 
 func jsonErr(w http.ResponseWriter, msg string, status int) {
