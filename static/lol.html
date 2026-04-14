@@ -124,7 +124,7 @@ async function doQuery(){
   $('#resultWrap').style.display = 'none';
   try {
     const qs = new URLSearchParams({ nickname, areaId, areaName, allCount, modelId, filter: '1', seleMe: '1' });
-    const res = await fetch('/api/lol/query?' + qs.toString());
+    const res = await fetch('/api/lol_query?' + qs.toString());
     const json = await res.json();
     if(!res.ok || json.code !== 0){ $('#status').textContent = (json && json.msg) ? json.msg : `查询失败（HTTP ${res.status}）`; return; }
     renderResult(json.data, {nickname, areaId, areaName, allCount, modelId});

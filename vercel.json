@@ -3,6 +3,7 @@
     "api/search.go": { "runtime": "@vercel/go@3.4.0" },
     "api/play.go":   { "runtime": "@vercel/go@3.4.0" },
     "api/download.go": { "runtime": "@vercel/go@3.4.0" },
-    "api/lol/query.go": { "runtime": "@vercel/go@3.4.0" }
+    "api/lol/query.go": { "runtime": "@vercel/go@3.4.0" },
+    "api/lol_query.go": { "runtime": "@vercel/go@3.4.0" }
   }
 }
