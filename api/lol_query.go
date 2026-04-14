@@ -14,7 +14,7 @@ import (
 
 const lolQueryBaseURL = "https://a.lzyumi.top/lzyumi/lol/info"
 
-func Lol_query(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
 	nickname := strings.TrimSpace(r.URL.Query().Get("nickname"))
 	areaName := strings.TrimSpace(r.URL.Query().Get("areaName"))
 	if nickname == "" || areaName == "" {
